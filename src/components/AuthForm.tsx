@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 
 interface AuthFormProps {
   type: "login" | "signup";
@@ -11,19 +12,59 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (type === "signup" && password !== confirmPassword) {
-      alert("Passwords do not match!");
+      setErrorMessage("Passwords do not match!");
       return;
     }
-    console.log(type === "login" ? "Logging In" : "Signing Up", {
+
+    if (type === "login") {
+      handleLogin();
+    } else handleSignup();
+  };
+
+  const handleLogin = async () => {
+    const result = await signIn("credentials", {
       email,
       password,
-      fullName,
+      redirect: false,
     });
-    // Add your API call or form logic here
+
+    if (result?.error) {
+      setErrorMessage("Invalid credentials!");
+    } else {
+      window.location.href = "/dashboard";
+    }
+  };
+
+  const handleSignup = async () => {
+    const res = await fetch(`/api/auth/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password, name: fullName }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setErrorMessage(data.message.message);
+      return;
+    }
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setErrorMessage("Failed to create account. Please try again!");
+    } else {
+      window.location.href = "/dashboard";
+    }
   };
 
   return (
@@ -36,6 +77,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ type }) => {
         <h1 className="text-2xl font-bold text-center mb-6">
           {type === "login" ? "Log In to TrackerBea" : "Sign Up for TrackerBea"}
         </h1>
+        {errorMessage && (
+          <p className="text-red-500 text-center">{errorMessage}</p>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           {type === "signup" && (
             <div>

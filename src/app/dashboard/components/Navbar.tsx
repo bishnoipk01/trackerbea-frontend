@@ -1,4 +1,4 @@
-export default function Navbar() {
+export default function Navbar({ user }) {
   return (
     <div className="bg-gray-800 p-4 flex justify-between items-center shadow">
       <h1 className="text-2xl font-bold">TrackerBea Dashboard</h1>
@@ -10,7 +10,7 @@ export default function Navbar() {
           Add Task
         </button>
         <div className="bg-gray-700 p-2 rounded-full">
-          <span className="material-icons text-white">account_circle</span>
+          <span className="material-icons text-white">{user?.name}</span>
         </div>
       </div>
     </div>
